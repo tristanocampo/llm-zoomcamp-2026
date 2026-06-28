@@ -89,7 +89,7 @@ class RAGBase:
     
 
 
-    def llm_gemini(self, prompt):
+    def ask(self, prompt):
         '''Calls the LLM with the provided prompt and returns the response.
         - Uses the instructions and the prompt to create a message history for the LLM.
         - Uses Gemini API Client to call the LLM and get the response.'''
