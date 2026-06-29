@@ -2,6 +2,7 @@
 # BUILD PROMPT
 # CALL LLM
 
+
 from google.genai import types
 
 
@@ -29,7 +30,7 @@ class RAGBase:
             self,
             index, 
             llm_client,
-            llm_model="gemini-2.5-flash",
+            llm_model="gemini-3.1-flash-lite",
             instructions=INSTRUCTIONS,
             prompt_template = USER_PROMPT_TEMPALATE,
             course = 'llm-zoomcamp'
@@ -61,6 +62,25 @@ class RAGBase:
             filter_dict=filter_dict
     )
 
+
+    search_function = types.FunctionDeclaration(
+        name="search",
+        description="Search the Frequently Asked Questions database for entries matching the query.",
+        parameters_json_schema={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The search query"
+                }
+            },
+            "required": ["query"]
+        }
+    )
+
+    search_tool = types.Tool(function_declarations=[search_function])
+
+
     def build_context(self, search_results):
         '''Builds a context string from the search results, and the prompt template
            to be used in the prompt for the LLM.'''     
@@ -89,7 +109,7 @@ class RAGBase:
     
 
 
-    def ask(self, prompt):
+    def llm_gemini(self, prompt):
         '''Calls the LLM with the provided prompt and returns the response.
         - Uses the instructions and the prompt to create a message history for the LLM.
         - Uses Gemini API Client to call the LLM and get the response.'''
@@ -99,12 +119,17 @@ class RAGBase:
             contents=prompt,
             config = types.GenerateContentConfig(
                 system_instruction=self.instructions,
-                tools = [self.search]
-    )
+                tools = [self.search_tool],
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                    disable=True
+                ),
+                tool_config=types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(mode="AUTO")
+                ),
+            )
         )
 
-        print(response.metadata)
-        return response.text.strip(), 
+        return response.text.strip()
     
     def ask(self, question):
         '''Performs the RAG process for the provided question.'''
